@@ -32,9 +32,10 @@ const issueSession = (user, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
 };
 
@@ -229,7 +230,12 @@ export const logout = async (req, res) => {
       await user.save();
     }
 
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+    });
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -253,7 +259,7 @@ export const registerkey = async (req, res) => {
 
   const options = await generateRegistrationOptions({
     rpName: process.env.RP_NAME,
-    rpID,
+    rpID: rpID(),
     userID: Buffer.from(user._id.toString()),
     userName: user.email || user.phone,
     attestationType: "none",
@@ -347,7 +353,7 @@ export const keyLogin = async (req, res) => {
   }
 
   const options = await generateAuthenticationOptions({
-    rpID,
+    rpID: rpID(),
     allowCredentials: user.credentials.map((c) => ({
       id: c.credentialID,
       transports: c.transports,
